@@ -22,7 +22,14 @@ class ViewController: UIViewController {
         return imageView
     }()
 
-
+    private lazy var countdownTimeLabel: UILabel = {
+        let label = UILabel()
+        label.text = "00:00"
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 60, weight: .regular)
+        label.textColor = .white
+        return label
+    }()
 
 
 
@@ -31,15 +38,24 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHierarchy()
+        setupLayout()
     }
 
     private func setupHierarchy() {
         view.addSubviews([
-            imageBackground
+            imageBackground,
+            countdownTimeLabel
         ])
     }
 
     // MARK: - Setup
+
+    private func setupLayout() {
+        countdownTimeLabel.snp.makeConstraints { make in
+            make.center.equalTo(view)
+        }
+
+    }
 
     // MARK: - Actions
 
