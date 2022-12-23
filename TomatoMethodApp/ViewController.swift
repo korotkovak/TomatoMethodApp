@@ -31,6 +31,21 @@ class ViewController: UIViewController {
         return label
     }()
 
+    private lazy var playAndPauseButton: UIButton = {
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = "Play"
+        configuration.imagePadding = 20
+        configuration.cornerStyle = .capsule
+        configuration.baseBackgroundColor = UIColor.white
+        configuration.baseForegroundColor = UIColor.black
+        configuration.buttonSize = .large
+        configuration.image = UIImage(systemName: "play.fill")
+        configuration.titleAlignment = .leading
+
+        let button = UIButton(configuration: configuration)
+        return button
+    }()
+
 
 
     // MARK: - Leficycle
@@ -44,7 +59,8 @@ class ViewController: UIViewController {
     private func setupHierarchy() {
         view.addSubviews([
             imageBackground,
-            countdownTimeLabel
+            countdownTimeLabel,
+            playAndPauseButton
         ])
     }
 
@@ -52,7 +68,15 @@ class ViewController: UIViewController {
 
     private func setupLayout() {
         countdownTimeLabel.snp.makeConstraints { make in
-            make.center.equalTo(view)
+            make.top.equalTo(view).offset(300)
+            make.centerX.equalTo(view)
+        }
+
+        playAndPauseButton.snp.makeConstraints { make in
+            make.top.equalTo(countdownTimeLabel.snp.bottom).offset(130)
+            make.centerX.equalTo(view)
+            make.width.equalTo(150)
+            make.height.equalTo(50)
         }
 
     }
