@@ -11,10 +11,19 @@ import SnapKit
 class ViewController: UIViewController {
 
     private var timer = Timer()
-    private var workingTime = 10
+    private var workingTime = 10.0
     private var relaxTime = 5
+
     private var isWorkTime: Bool = true
     private var isStarted: Bool = false
+    private var isAnimationStarted: Bool = false
+
+    private let foreProgressLayer = CAShapeLayer()
+    private let backProgressLayer = CAShapeLayer()
+    private let animation = CABasicAnimation(keyPath: "strokeEnd")
+
+    private var startPoint = CGFloat(-Double.pi / 2)
+    private var endPoint = CGFloat(3 * Double.pi / 2)
 
     // MARK: - UI Elements
 
@@ -86,6 +95,8 @@ class ViewController: UIViewController {
         view.backgroundColor = Colors.black
         setupHierarchy()
         setupLayout()
+        drawBackLayer()
+        drawForeLayer()
     }
 
     // MARK: - Setup
@@ -123,23 +134,23 @@ class ViewController: UIViewController {
         }
     }
 
-    func formatWorkTimer() -> String {
+    private func formatWorkTimer() -> String {
         let minutes = Int(workingTime) / 60 % 60
         let seconds = Int(workingTime) % 60
         return String(format: "%02i:%02i", minutes, seconds)
     }
 
-    func formatRelaxTimer() -> String {
+    private func formatRelaxTimer() -> String {
         let minutes = Int(relaxTime) / 60 % 60
         let seconds = Int(relaxTime) % 60
         return String(format: "%02i:%02i", minutes, seconds)
     }
 
-    func startTimer() {
+    private func startTimer() {
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
     }
 
-    @objc func updateTimer() {
+    @objc private func updateTimer() {
         if isWorkTime {
             updateWork()
         } else {
@@ -147,8 +158,9 @@ class ViewController: UIViewController {
         }
     }
 
-    func updateWork() {
+    private func updateWork() {
         if workingTime < 1 {
+            stopAnimation()
             cancelButton.isEnabled = false
             isStarted = false
             isWorkTime = false
@@ -164,8 +176,9 @@ class ViewController: UIViewController {
         }
     }
 
-    func updateRelax() {
+    private func updateRelax() {
         if relaxTime < 1 {
+            stopAnimation()
             cancelButton.isEnabled = false
             isStarted = false
             isWorkTime = true
@@ -181,6 +194,79 @@ class ViewController: UIViewController {
         }
     }
 
+    private func drawBackLayer() {
+        backProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
+        backProgressLayer.strokeColor = UIColor.white.cgColor
+        backProgressLayer.fillColor = UIColor.clear.cgColor
+        backProgressLayer.lineWidth = 10
+        view.layer.addSublayer(backProgressLayer)
+    }
+
+    private func drawForeLayer() {
+        foreProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
+        foreProgressLayer.strokeColor = Colors.violet.cgColor
+        foreProgressLayer.fillColor = UIColor.clear.cgColor
+        foreProgressLayer.lineWidth = 10
+        view.layer.addSublayer(foreProgressLayer)
+    }
+
+    private func startResumeAnimation() {
+        if isAnimationStarted {
+            resumeAnimation()
+        } else {
+            startAnimation()
+        }
+    }
+
+    private func startAnimation() {
+        resetAnimation()
+        foreProgressLayer.strokeEnd = 0.0
+        animation.keyPath = "strokeEnd"
+        animation.fromValue = 0.0
+        animation.toValue = 1.0
+        animation.duration = CFTimeInterval(workingTime)
+        animation.isRemovedOnCompletion = false
+        animation.isAdditive = true
+        animation.fillMode = .forwards
+        foreProgressLayer.add(animation, forKey: "strokeEnd")
+        isAnimationStarted = true
+    }
+
+    private func resetAnimation() {
+        foreProgressLayer.speed = 1.0
+        foreProgressLayer.timeOffset = 0.0
+        foreProgressLayer.beginTime = 0.0
+        foreProgressLayer.strokeEnd = 0.0
+        isAnimationStarted = false
+    }
+
+    private func pauseAnimation() {
+        let pausedTime = foreProgressLayer.convertTime(CACurrentMediaTime(), to: nil)
+        foreProgressLayer.speed = 0.0
+        foreProgressLayer.timeOffset = pausedTime
+    }
+
+    private func resumeAnimation() {
+        let pausedTime = foreProgressLayer.timeOffset
+        foreProgressLayer.speed = 1.0
+        foreProgressLayer.timeOffset = 0.0
+        foreProgressLayer.beginTime = 0.0
+
+        let timeSincePaused = foreProgressLayer.convertTime(CACurrentMediaTime(), to: nil) - pausedTime
+        foreProgressLayer.beginTime = timeSincePaused
+    }
+
+    private func stopAnimation() {
+        foreProgressLayer.speed = 1.0
+        foreProgressLayer.timeOffset = 0.0
+        foreProgressLayer.beginTime = 0.0
+        foreProgressLayer.strokeEnd = 0.0
+        foreProgressLayer.removeAllAnimations()
+        isAnimationStarted = false
+    }
+
+
+
     // MARK: - Actions
 
     @objc private func startAndPauseButtonTapped() {
@@ -189,11 +275,14 @@ class ViewController: UIViewController {
         if isStarted {
             isStarted = false
             timer.invalidate()
+            pauseAnimation()
             playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         } else {
             isStarted = true
             timer.invalidate()
+            drawForeLayer()
+            startResumeAnimation()
             playAndPauseButton.configuration?.title = "Pause"
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
             startTimer()
@@ -201,6 +290,7 @@ class ViewController: UIViewController {
     }
 
     @objc private func cancelButtonTapped() {
+        stopAnimation()
         cancelButton.isEnabled = false
         isStarted = false
         isWorkTime = true
@@ -219,5 +309,7 @@ extension UIView {
         subviews.forEach { addSubview($0) }
     }
 }
+
+
 
 
