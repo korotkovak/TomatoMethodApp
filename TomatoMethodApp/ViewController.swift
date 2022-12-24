@@ -10,6 +10,11 @@ import SnapKit
 
 class ViewController: UIViewController {
 
+    private var timer = Timer()
+    private var time = 1500
+    private var isWorkTime: Bool = false
+    private var isStarted: Bool = false
+
     // MARK: - UI Elements
 
     private lazy var imageBackground: UIImageView = {
@@ -43,10 +48,9 @@ class ViewController: UIViewController {
         configuration.titleAlignment = .leading
 
         let button = UIButton(configuration: configuration)
+        button.addTarget(self, action: #selector(startAndPauseTapped), for: .touchUpInside)
         return button
     }()
-
-
 
     // MARK: - Leficycle
 
@@ -56,6 +60,8 @@ class ViewController: UIViewController {
         setupLayout()
     }
 
+    // MARK: - Setup
+
     private func setupHierarchy() {
         view.addSubviews([
             imageBackground,
@@ -63,8 +69,6 @@ class ViewController: UIViewController {
             playAndPauseButton
         ])
     }
-
-    // MARK: - Setup
 
     private func setupLayout() {
         countdownTimeLabel.snp.makeConstraints { make in
@@ -78,12 +82,41 @@ class ViewController: UIViewController {
             make.width.equalTo(150)
             make.height.equalTo(50)
         }
-
     }
+
+    func startTimer() {
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
+    }
+
+    @objc func updateTimer(){
+        time -= 1
+        countdownTimeLabel.text = formatTimer()
+    }
+
+    func formatTimer() -> String {
+        let minutes = Int(time) / 60 % 60
+        let seconds = Int(time) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
+
 
     // MARK: - Actions
 
+    @objc private func startAndPauseTapped() {
+        if isStarted {
+            isStarted = false
+            timer.invalidate()
+            playAndPauseButton.configuration?.title = "Play"
+            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        } else {
+            isStarted = true
+            timer.invalidate()
+            playAndPauseButton.configuration?.title = "Pause"
+            playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
+            startTimer()
 
+        }
+    }
 }
 
 extension UIView {
@@ -91,3 +124,5 @@ extension UIView {
         subviews.forEach { addSubview($0) }
     }
 }
+
+
