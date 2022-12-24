@@ -11,7 +11,7 @@ import SnapKit
 class ViewController: UIViewController {
 
     private var timer = Timer()
-    private var time = 1500
+    private var time = 10
     private var isWorkTime: Bool = false
     private var isStarted: Bool = false
 
@@ -112,10 +112,22 @@ class ViewController: UIViewController {
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
     }
 
-    @objc func updateTimer(){
-        time -= 1
-        countdownTimeLabel.text = formatTimer()
+    @objc func updateTimer() {
+        if time < 1 {
+            cancelButton.isEnabled = false
+            isStarted = false
+            time = 10
+            timer.invalidate()
+            countdownTimeLabel.text = "00:10"
+            playAndPauseButton.configuration?.title = "Play"
+            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        } else {
+            time -= 1
+            countdownTimeLabel.text = formatTimer()
+        }
     }
+
+
 
     func formatTimer() -> String {
         let minutes = Int(time) / 60 % 60
@@ -146,9 +158,9 @@ class ViewController: UIViewController {
     @objc private func cancelButtonTapped() {
         cancelButton.isEnabled = false
         isStarted = false
-        time = 1500
+        time = 10
         timer.invalidate()
-        countdownTimeLabel.text = "25:00"
+        countdownTimeLabel.text = "00:10"
         playAndPauseButton.configuration?.title = "Play"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
     }
