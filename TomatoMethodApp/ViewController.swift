@@ -11,8 +11,9 @@ import SnapKit
 class ViewController: UIViewController {
 
     private var timer = Timer()
-    private var time = 10
-    private var isWorkTime: Bool = false
+    private var workingTime = 10
+    private var relaxTime = 5
+    private var isWorkTime: Bool = true
     private var isStarted: Bool = false
 
     // MARK: - UI Elements
@@ -32,6 +33,15 @@ class ViewController: UIViewController {
         label.text = "00:00"
         label.textAlignment = .center
         label.font = UIFont.systemFont(ofSize: 60, weight: .regular)
+        label.textColor = .white
+        return label
+    }()
+
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Work"
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 40, weight: .regular)
         label.textColor = .white
         return label
     }()
@@ -81,6 +91,7 @@ class ViewController: UIViewController {
     private func setupHierarchy() {
         view.addSubviews([
             imageBackground,
+            titleLabel,
             countdownTimeLabel,
             playAndPauseButton,
             cancelButton
@@ -88,6 +99,11 @@ class ViewController: UIViewController {
     }
 
     private func setupLayout() {
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalTo(view).offset(100)
+            make.centerX.equalTo(view)
+        }
+
         countdownTimeLabel.snp.makeConstraints { make in
             make.top.equalTo(view).offset(300)
             make.centerX.equalTo(view)
@@ -108,33 +124,65 @@ class ViewController: UIViewController {
         }
     }
 
+    func formatWorkTimer() -> String {
+        let minutes = Int(workingTime) / 60 % 60
+        let seconds = Int(workingTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
+
+    func formatRelaxTimer() -> String {
+        let minutes = Int(relaxTime) / 60 % 60
+        let seconds = Int(relaxTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
+
     func startTimer() {
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
     }
 
     @objc func updateTimer() {
-        if time < 1 {
-            cancelButton.isEnabled = false
-            isStarted = false
-            time = 10
-            timer.invalidate()
-            countdownTimeLabel.text = "00:10"
-            playAndPauseButton.configuration?.title = "Play"
-            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        if isWorkTime {
+            updateWork()
         } else {
-            time -= 1
-            countdownTimeLabel.text = formatTimer()
+            updateRelax()
         }
     }
 
-
-
-    func formatTimer() -> String {
-        let minutes = Int(time) / 60 % 60
-        let seconds = Int(time) % 60
-        return String(format: "%02i:%02i", minutes, seconds)
+    func updateWork() {
+        if workingTime < 1 {
+            cancelButton.isEnabled = false
+            isStarted = false
+            isWorkTime = false
+            workingTime = 10
+            timer.invalidate()
+            titleLabel.text = "Relax"
+            countdownTimeLabel.text = "00:05"
+            countdownTimeLabel.textColor = .red
+            playAndPauseButton.configuration?.title = "Play"
+            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        } else {
+            workingTime -= 1
+            countdownTimeLabel.text = formatWorkTimer()
+        }
     }
 
+    func updateRelax() {
+        if relaxTime < 1 {
+            cancelButton.isEnabled = false
+            isStarted = false
+            isWorkTime = true
+            relaxTime = 5
+            timer.invalidate()
+            titleLabel.text = "Work"
+            countdownTimeLabel.text = "00:10"
+            countdownTimeLabel.textColor = .white
+            playAndPauseButton.configuration?.title = "Play"
+            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        } else {
+            relaxTime -= 1
+            countdownTimeLabel.text = formatRelaxTimer()
+        }
+    }
 
     // MARK: - Actions
 
@@ -158,9 +206,13 @@ class ViewController: UIViewController {
     @objc private func cancelButtonTapped() {
         cancelButton.isEnabled = false
         isStarted = false
-        time = 10
+        isWorkTime = true
+        workingTime = 10
+        relaxTime = 5
         timer.invalidate()
         countdownTimeLabel.text = "00:10"
+        countdownTimeLabel.textColor = .white
+        titleLabel.text = "Work"
         playAndPauseButton.configuration?.title = "Play"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
     }
