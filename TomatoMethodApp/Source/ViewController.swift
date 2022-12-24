@@ -11,7 +11,7 @@ import SnapKit
 class ViewController: UIViewController {
 
     private var timer = Timer()
-    private var workingTime = 10.0
+    private var workingTime = 10
     private var relaxTime = 5
 
     private var isWorkTime: Bool = true
@@ -158,8 +158,9 @@ class ViewController: UIViewController {
         }
     }
 
+
     private func updateWork() {
-        if workingTime < 1 {
+        if workingTime == 0 {
             stopAnimation()
             cancelButton.isEnabled = false
             isStarted = false
@@ -170,6 +171,7 @@ class ViewController: UIViewController {
             countdownTimeLabel.text = "00:05"
             playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+
         } else {
             workingTime -= 1
             countdownTimeLabel.text = formatWorkTimer()
@@ -204,9 +206,15 @@ class ViewController: UIViewController {
 
     private func drawForeLayer() {
         foreProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        foreProgressLayer.strokeColor = Colors.violet.cgColor
-        foreProgressLayer.fillColor = UIColor.clear.cgColor
         foreProgressLayer.lineWidth = 10
+        foreProgressLayer.fillColor = UIColor.clear.cgColor
+
+        if isWorkTime {
+            foreProgressLayer.strokeColor = Colors.violet.cgColor
+        } else {
+            foreProgressLayer.strokeColor = Colors.green.cgColor
+        }
+
         view.layer.addSublayer(foreProgressLayer)
     }
 
@@ -224,10 +232,16 @@ class ViewController: UIViewController {
         animation.keyPath = "strokeEnd"
         animation.fromValue = 0.0
         animation.toValue = 1.0
-        animation.duration = CFTimeInterval(workingTime)
         animation.isRemovedOnCompletion = false
         animation.isAdditive = true
         animation.fillMode = .forwards
+
+        if isWorkTime {
+            animation.duration = CFTimeInterval(workingTime)
+        } else {
+            animation.duration = CFTimeInterval(relaxTime)
+        }
+
         foreProgressLayer.add(animation, forKey: "strokeEnd")
         isAnimationStarted = true
     }
@@ -264,8 +278,6 @@ class ViewController: UIViewController {
         foreProgressLayer.removeAllAnimations()
         isAnimationStarted = false
     }
-
-
 
     // MARK: - Actions
 
@@ -309,7 +321,3 @@ extension UIView {
         subviews.forEach { addSubview($0) }
     }
 }
-
-
-
-
