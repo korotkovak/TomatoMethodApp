@@ -48,7 +48,23 @@ class ViewController: UIViewController {
         configuration.titleAlignment = .leading
 
         let button = UIButton(configuration: configuration)
-        button.addTarget(self, action: #selector(startAndPauseTapped), for: .touchUpInside)
+        button.addTarget(self, action: #selector(startAndPauseButtonTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var cancelButton: UIButton = {
+        var configuration = UIButton.Configuration.tinted()
+        configuration.title = "Cancel"
+        configuration.imagePadding = 20
+        configuration.cornerStyle = .capsule
+        configuration.baseBackgroundColor = UIColor.white
+        configuration.baseForegroundColor = UIColor.black
+        configuration.buttonSize = .large
+        configuration.image = UIImage(systemName: "multiply")
+        configuration.titleAlignment = .leading
+
+        let button = UIButton(configuration: configuration)
+        button.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
         return button
     }()
 
@@ -66,7 +82,8 @@ class ViewController: UIViewController {
         view.addSubviews([
             imageBackground,
             countdownTimeLabel,
-            playAndPauseButton
+            playAndPauseButton,
+            cancelButton
         ])
     }
 
@@ -78,6 +95,13 @@ class ViewController: UIViewController {
 
         playAndPauseButton.snp.makeConstraints { make in
             make.top.equalTo(countdownTimeLabel.snp.bottom).offset(130)
+            make.centerX.equalTo(view)
+            make.width.equalTo(150)
+            make.height.equalTo(50)
+        }
+
+        cancelButton.snp.makeConstraints { make in
+            make.top.equalTo(playAndPauseButton.snp.bottom).offset(20)
             make.centerX.equalTo(view)
             make.width.equalTo(150)
             make.height.equalTo(50)
@@ -102,7 +126,9 @@ class ViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func startAndPauseTapped() {
+    @objc private func startAndPauseButtonTapped() {
+        cancelButton.isEnabled = true
+
         if isStarted {
             isStarted = false
             timer.invalidate()
@@ -114,8 +140,17 @@ class ViewController: UIViewController {
             playAndPauseButton.configuration?.title = "Pause"
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
             startTimer()
-
         }
+    }
+
+    @objc private func cancelButtonTapped() {
+        cancelButton.isEnabled = false
+        isStarted = false
+        time = 1500
+        timer.invalidate()
+        countdownTimeLabel.text = "25:00"
+        playAndPauseButton.configuration?.title = "Play"
+        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
     }
 }
 
