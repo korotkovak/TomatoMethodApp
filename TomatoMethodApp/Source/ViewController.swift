@@ -31,7 +31,7 @@ class ViewController: UIViewController {
         let label = UILabel()
         label.text = "Work"
         label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 40, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 40, weight: .bold)
         label.textColor = .white
         return label
     }()
@@ -40,17 +40,15 @@ class ViewController: UIViewController {
         let label = UILabel()
         label.text = "00:00"
         label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 60, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 60, weight: .bold)
         label.textColor = .white
         return label
     }()
 
     private lazy var playAndPauseButton: UIButton = {
         var configuration = UIButton.Configuration.filled()
-        configuration.title = "Play"
-        configuration.imagePadding = 20
         configuration.cornerStyle = .capsule
-        configuration.baseBackgroundColor = Colors.violet
+        configuration.baseBackgroundColor = Colors.green
         configuration.baseForegroundColor = UIColor.white
         configuration.buttonSize = .large
         configuration.image = UIImage(systemName: "play.fill")
@@ -63,13 +61,11 @@ class ViewController: UIViewController {
 
     private lazy var cancelButton: UIButton = {
         var configuration = UIButton.Configuration.tinted()
-        configuration.title = "Cancel"
-        configuration.imagePadding = 20
         configuration.cornerStyle = .capsule
-        configuration.baseBackgroundColor = Colors.violet
+        configuration.baseBackgroundColor = Colors.gray
         configuration.baseForegroundColor = UIColor.white
         configuration.buttonSize = .large
-        configuration.image = UIImage(systemName: "multiply")
+        configuration.image = UIImage(systemName: "goforward")
         configuration.titleAlignment = .leading
 
         let button = UIButton(configuration: configuration)
@@ -82,7 +78,7 @@ class ViewController: UIViewController {
         stack.axis = .horizontal
         stack.alignment = .center
         stack.distribution = .fillEqually
-        stack.spacing = 20
+        stack.spacing = 40
         stack.addArrangedSubview(cancelButton)
         stack.addArrangedSubview(playAndPauseButton)
         return stack
@@ -120,16 +116,18 @@ class ViewController: UIViewController {
         }
 
         playAndPauseButton.snp.makeConstraints { make in
-            make.height.equalTo(50)
+            make.height.equalTo(80)
+            make.width.equalTo(80)
         }
 
         cancelButton.snp.makeConstraints { make in
-            make.height.equalTo(50)
+            make.height.equalTo(80)
+            make.width.equalTo(80)
         }
 
         stack.snp.makeConstraints { make in
-            make.left.equalTo(view).offset(30)
-            make.right.equalTo(view).offset(-30)
+            make.centerX.equalTo(view)
+            make.width.equalTo(200)
             make.bottom.equalTo(view).offset(-80)
         }
     }
@@ -158,7 +156,6 @@ class ViewController: UIViewController {
         }
     }
 
-
     private func updateWork() {
         if workingTime == 0 {
             stopAnimation()
@@ -169,9 +166,7 @@ class ViewController: UIViewController {
             timer.invalidate()
             titleLabel.text = "Relax"
             countdownTimeLabel.text = "00:05"
-            playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-
         } else {
             workingTime -= 1
             countdownTimeLabel.text = formatWorkTimer()
@@ -188,7 +183,6 @@ class ViewController: UIViewController {
             timer.invalidate()
             titleLabel.text = "Work"
             countdownTimeLabel.text = "00:10"
-            playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         } else {
             relaxTime -= 1
@@ -198,19 +192,20 @@ class ViewController: UIViewController {
 
     private func drawBackLayer() {
         backProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        backProgressLayer.strokeColor = UIColor.white.cgColor
+        backProgressLayer.strokeColor = Colors.gray.cgColor
         backProgressLayer.fillColor = UIColor.clear.cgColor
-        backProgressLayer.lineWidth = 10
+        backProgressLayer.lineWidth = 15
         view.layer.addSublayer(backProgressLayer)
     }
 
     private func drawForeLayer() {
         foreProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        foreProgressLayer.lineWidth = 10
+        foreProgressLayer.lineWidth = 15
+        foreProgressLayer.lineCap = .round
         foreProgressLayer.fillColor = UIColor.clear.cgColor
 
         if isWorkTime {
-            foreProgressLayer.strokeColor = Colors.violet.cgColor
+            foreProgressLayer.strokeColor = Colors.blue.cgColor
         } else {
             foreProgressLayer.strokeColor = Colors.green.cgColor
         }
@@ -288,15 +283,15 @@ class ViewController: UIViewController {
             isStarted = false
             timer.invalidate()
             pauseAnimation()
-            playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+            playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
         } else {
             isStarted = true
             timer.invalidate()
             drawForeLayer()
             startResumeAnimation()
-            playAndPauseButton.configuration?.title = "Pause"
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
+            playAndPauseButton.configuration?.baseBackgroundColor = Colors.red
             startTimer()
         }
     }
@@ -311,7 +306,6 @@ class ViewController: UIViewController {
         timer.invalidate()
         countdownTimeLabel.text = "00:10"
         titleLabel.text = "Work"
-        playAndPauseButton.configuration?.title = "Play"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
     }
 }
