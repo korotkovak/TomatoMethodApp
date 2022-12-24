@@ -18,14 +18,13 @@ class ViewController: UIViewController {
 
     // MARK: - UI Elements
 
-    private lazy var imageBackground: UIImageView = {
-        let width = UIScreen.main.bounds.size.width
-        let height = UIScreen.main.bounds.size.height
-        let imageView = UIImageView(frame: CGRect(x:0, y:0, width: width, height: height))
-        imageView.image = UIImage(named: "background")
-        imageView.contentMode = .scaleAspectFill
-        imageView.center = view.center
-        return imageView
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Work"
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 40, weight: .regular)
+        label.textColor = .white
+        return label
     }()
 
     private lazy var countdownTimeLabel: UILabel = {
@@ -37,22 +36,13 @@ class ViewController: UIViewController {
         return label
     }()
 
-    private lazy var titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Work"
-        label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 40, weight: .regular)
-        label.textColor = .white
-        return label
-    }()
-
     private lazy var playAndPauseButton: UIButton = {
         var configuration = UIButton.Configuration.filled()
         configuration.title = "Play"
         configuration.imagePadding = 20
         configuration.cornerStyle = .capsule
-        configuration.baseBackgroundColor = UIColor.white
-        configuration.baseForegroundColor = UIColor.black
+        configuration.baseBackgroundColor = Colors.violet
+        configuration.baseForegroundColor = UIColor.white
         configuration.buttonSize = .large
         configuration.image = UIImage(systemName: "play.fill")
         configuration.titleAlignment = .leading
@@ -67,8 +57,8 @@ class ViewController: UIViewController {
         configuration.title = "Cancel"
         configuration.imagePadding = 20
         configuration.cornerStyle = .capsule
-        configuration.baseBackgroundColor = UIColor.white
-        configuration.baseForegroundColor = UIColor.black
+        configuration.baseBackgroundColor = Colors.violet
+        configuration.baseForegroundColor = UIColor.white
         configuration.buttonSize = .large
         configuration.image = UIImage(systemName: "multiply")
         configuration.titleAlignment = .leading
@@ -78,10 +68,22 @@ class ViewController: UIViewController {
         return button
     }()
 
+    private lazy var stack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.distribution = .fillEqually
+        stack.spacing = 20
+        stack.addArrangedSubview(cancelButton)
+        stack.addArrangedSubview(playAndPauseButton)
+        return stack
+    }()
+
     // MARK: - Leficycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = Colors.black
         setupHierarchy()
         setupLayout()
     }
@@ -90,11 +92,9 @@ class ViewController: UIViewController {
 
     private func setupHierarchy() {
         view.addSubviews([
-            imageBackground,
             titleLabel,
             countdownTimeLabel,
-            playAndPauseButton,
-            cancelButton
+            stack
         ])
     }
 
@@ -105,22 +105,21 @@ class ViewController: UIViewController {
         }
 
         countdownTimeLabel.snp.makeConstraints { make in
-            make.top.equalTo(view).offset(300)
-            make.centerX.equalTo(view)
+            make.center.equalTo(view)
         }
 
         playAndPauseButton.snp.makeConstraints { make in
-            make.top.equalTo(countdownTimeLabel.snp.bottom).offset(130)
-            make.centerX.equalTo(view)
-            make.width.equalTo(150)
             make.height.equalTo(50)
         }
 
         cancelButton.snp.makeConstraints { make in
-            make.top.equalTo(playAndPauseButton.snp.bottom).offset(20)
-            make.centerX.equalTo(view)
-            make.width.equalTo(150)
             make.height.equalTo(50)
+        }
+
+        stack.snp.makeConstraints { make in
+            make.left.equalTo(view).offset(30)
+            make.right.equalTo(view).offset(-30)
+            make.bottom.equalTo(view).offset(-80)
         }
     }
 
@@ -157,7 +156,6 @@ class ViewController: UIViewController {
             timer.invalidate()
             titleLabel.text = "Relax"
             countdownTimeLabel.text = "00:05"
-            countdownTimeLabel.textColor = .red
             playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         } else {
@@ -175,7 +173,6 @@ class ViewController: UIViewController {
             timer.invalidate()
             titleLabel.text = "Work"
             countdownTimeLabel.text = "00:10"
-            countdownTimeLabel.textColor = .white
             playAndPauseButton.configuration?.title = "Play"
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         } else {
@@ -211,7 +208,6 @@ class ViewController: UIViewController {
         relaxTime = 5
         timer.invalidate()
         countdownTimeLabel.text = "00:10"
-        countdownTimeLabel.textColor = .white
         titleLabel.text = "Work"
         playAndPauseButton.configuration?.title = "Play"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
