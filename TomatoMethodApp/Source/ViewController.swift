@@ -15,6 +15,7 @@ class ViewController: UIViewController {
     private var timer = Timer()
     private var workTime: TimeInterval = 10
     private var relaxTime: TimeInterval = 5
+    private var accurateTimerCount = 1000
 
     private var circleLayer = CAShapeLayer()
     private var progressLayer = CAShapeLayer()
@@ -131,27 +132,17 @@ class ViewController: UIViewController {
         }
     }
 
-    private func formatWorkTimer() -> String {
-        let minutes = Int(workTime) / 60 % 60
-        let seconds = Int(workTime) % 60
-        return String(format: "%02i:%02i", minutes, seconds)
-    }
-
-    private func formatRelaxTimer() -> String {
-        let minutes = Int(relaxTime) / 60 % 60
-        let seconds = Int(relaxTime) % 60
-        return String(format: "%02i:%02i", minutes, seconds)
-    }
+    // MARK: - Progress bar
 
     private func createCircularPath() {
-        let circularPath = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true)
+        let circularPath = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 140, startAngle: startPoint, endAngle: endPoint, clockwise: true)
 
         //Создание фона круга
         circleLayer.path = circularPath.cgPath
         circleLayer.fillColor = UIColor.clear.cgColor
         circleLayer.lineCap = .round
         circleLayer.lineWidth = 15
-        circleLayer.strokeEnd = 1.0
+        circleLayer.strokeEnd = 1
         circleLayer.strokeColor = Colors.gray.cgColor
         view.layer.addSublayer(circleLayer)
 
@@ -167,22 +158,27 @@ class ViewController: UIViewController {
 
     //Метод режима работы анимации
     private func startResumeAnimation() {
-        if isAnimationStarted == false {
-            if isWorkTime == true {
-                startAnimation(duration: workTime)
-                print("workTime")
-            } else {
-                startAnimation(duration: relaxTime)
-                print("relaxTime")
-            }
+        if !isAnimationStarted{
+            changeTime()
         } else {
             resumeAnimation(for: progressLayer)
             print("resumeAnimation")
         }
     }
 
+    //Метод меняет время, в зависимоти от рабочего времени
+    private func changeTime() {
+        if isWorkTime {
+            startAnimation(duration: workTime)
+            print("workTime")
+        } else {
+            startAnimation(duration: relaxTime)
+            print("relaxTime")
+        }
+    }
+
     //Метод для настройки старта анимации
-    func startAnimation(duration: TimeInterval) {
+    private func startAnimation(duration: TimeInterval) {
         resetAnimation()
         isAnimationStarted = true
         let circularProgressAnimation = CABasicAnimation(keyPath: "strokeEnd")
@@ -232,8 +228,92 @@ class ViewController: UIViewController {
         print("stopAnimation")
     }
 
+    // MARK: - Timer
+
+    private func formatWorkTimer() -> String {
+        let minutes = Int(workTime) / 60 % 60
+        let seconds = Int(workTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
+
+    private func formatRelaxTimer() -> String {
+        let minutes = Int(relaxTime) / 60 % 60
+        let seconds = Int(relaxTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
+
     private func startTimer() {
-        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
+    }
+
+    //Метод установки режима таймера
+    @objc private func timerMode() {
+        if accurateTimerCount > 0 {
+            accurateTimerCount -= 1
+            return
+        }
+
+        accurateTimerCount = 1000
+
+        if isWorkTime {
+            changeToRelax()
+        } else {
+            changeToWork()
+        }
+    }
+
+    //Интерфейс для работы
+    private func workTimeInterface() {
+        titleLabel.text = "Work"
+        countdownTimeLabel.text = "00:10"
+        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        progressLayer.strokeColor = Colors.blue.cgColor
+    }
+
+    //Интерфейс для отдыха
+    private func relaxTimeInterface() {
+        titleLabel.text = "Relax"
+        countdownTimeLabel.text = "00:05"
+        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        progressLayer.strokeColor = Colors.green.cgColor
+    }
+
+    //Режим рабочее время и сменя на отдых
+    private func changeToRelax() {
+        guard workTime > 1 else {
+            stopAnimation()
+            workTime = 10
+            relaxTimeInterface()
+            isStarted = false
+            isWorkTime = false
+            refreshButton.isEnabled = false
+            timer.invalidate()
+            print("work stop")
+            return
+        }
+
+        print("work go \(workTime)")
+        workTime -= 1
+        countdownTimeLabel.text = formatWorkTimer()
+    }
+
+    //Режим отдыха и сменя на рабочее время
+    private func changeToWork() {
+        guard relaxTime > 1 else {
+            stopAnimation()
+            relaxTime = 5
+            workTimeInterface()
+            isStarted = false
+            isWorkTime = true
+            refreshButton.isEnabled = false
+            timer.invalidate()
+            print("relax stop")
+            return
+        }
+
+        print("relax go \(relaxTime)")
+        relaxTime -= 1
+        countdownTimeLabel.text = formatRelaxTimer()
     }
 
     // MARK: - Actions
@@ -242,7 +322,7 @@ class ViewController: UIViewController {
     @objc private func startAndPauseButtonTapped() {
         refreshButton.isEnabled = true
 
-        if isStarted == false {
+        if !isStarted {
             startTimer()
             startResumeAnimation()
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
@@ -254,64 +334,11 @@ class ViewController: UIViewController {
             pauseAnimation(for: progressLayer)
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
             playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
-            //            progressLayer.removeAnimation(forKey: "progressAnimation")
-
+            progressLayer.removeAnimation(forKey: "progressAnimation")
             isStarted = false
             print("pause")
         }
     }
-
-    //Метод установки режима работы в зависимости от таймера
-    @objc private func timerMode() {
-        if isWorkTime {
-            //Режим работы
-            if workTime < 1 {
-                changeToRelax()
-            } else {
-                print("work go \(workTime)")
-                workTime -= 1
-                countdownTimeLabel.text = formatWorkTimer()
-            }
-        } else {
-            //Режим отдыха
-            if relaxTime < 1 {
-                changeToWork()
-            } else {
-                print("relax go \(relaxTime)")
-                relaxTime -= 1
-                countdownTimeLabel.text = formatRelaxTimer()
-            }
-        }
-    }
-
-    private func changeToRelax() {
-        stopAnimation()
-        workTime = 10
-        titleLabel.text = "Relax"
-        countdownTimeLabel.text = "00:05"
-        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-        progressLayer.strokeColor = Colors.green.cgColor
-        isStarted = false
-        isWorkTime = false
-        refreshButton.isEnabled = false
-        timer.invalidate()
-        print("work stop")
-    }
-
-    private func changeToWork() {
-        stopAnimation()
-        relaxTime = 5
-        titleLabel.text = "Work"
-        countdownTimeLabel.text = "00:10"
-        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-        progressLayer.strokeColor = Colors.blue.cgColor
-        isStarted = false
-        isWorkTime = true
-        refreshButton.isEnabled = false
-        timer.invalidate()
-        print("relax stop")
-    }
-
 
     @objc private func refreshButtonTapped() {
         stopAnimation()
@@ -320,11 +347,9 @@ class ViewController: UIViewController {
         isWorkTime = true
         workTime = 10
         relaxTime = 5
+        accurateTimerCount = 1000
         timer.invalidate()
-        progressLayer.strokeColor = Colors.blue.cgColor
-        countdownTimeLabel.text = "00:10"
-        titleLabel.text = "Work"
-        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        workTimeInterface()
     }
 }
 
