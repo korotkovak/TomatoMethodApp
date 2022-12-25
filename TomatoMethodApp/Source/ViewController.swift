@@ -10,23 +10,20 @@ import SnapKit
 
 class ViewController: UIViewController {
 
-    private var timer = Timer()
-    private var allTime = Time.workTime {
-        didSet {
-            print(allTime)
-        }
-    }
+    // MARK: - Properties
 
-    private var isWorkTime: Bool = true
-    private var isStarted: Bool = false
-    private var isAnimationStarted: Bool = false
+    private var timer = Timer()
+    private var workTime: TimeInterval = 10
+    private var relaxTime: TimeInterval = 5
 
     private var circleLayer = CAShapeLayer()
     private var progressLayer = CAShapeLayer()
-    private let animation = CABasicAnimation(keyPath: "strokeEnd")
-
     private var startPoint = CGFloat(-Double.pi / 2)
     private var endPoint = CGFloat(3 * Double.pi / 2)
+
+    private var isWorkTime = true
+    private var isStarted = false
+    private var isAnimationStarted = false
 
     // MARK: - UI Elements
 
@@ -41,7 +38,7 @@ class ViewController: UIViewController {
 
     private lazy var countdownTimeLabel: UILabel = {
         let label = UILabel()
-        label.text = "00:00"
+        label.text = "00:10"
         label.textAlignment = .center
         label.font = UIFont.systemFont(ofSize: 60, weight: .bold)
         label.textColor = .white
@@ -95,7 +92,6 @@ class ViewController: UIViewController {
         setupHierarchy()
         setupLayout()
         createCircularPath()
-        createProgressLayerPath()
     }
 
     // MARK: - Setup
@@ -135,32 +131,36 @@ class ViewController: UIViewController {
         }
     }
 
-    private func setupTime() {
-        let minutes = Int(allTime) / 60 % 60
-        let seconds = Int(allTime) % 60
-        countdownTimeLabel.text = String(format: "%02i:%02i", minutes, seconds)
+    private func formatWorkTimer() -> String {
+        let minutes = Int(workTime) / 60 % 60
+        let seconds = Int(workTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
     }
 
-    // MARK: - Circle Progress Bar
+    private func formatRelaxTimer() -> String {
+        let minutes = Int(relaxTime) / 60 % 60
+        let seconds = Int(relaxTime) % 60
+        return String(format: "%02i:%02i", minutes, seconds)
+    }
 
-    //Метод создания таймлайна - серая подложка
     private func createCircularPath() {
-        circleLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        circleLayer.strokeColor = Colors.gray.cgColor
+        let circularPath = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true)
+
+        //Создание фона круга
+        circleLayer.path = circularPath.cgPath
         circleLayer.fillColor = UIColor.clear.cgColor
         circleLayer.lineCap = .round
         circleLayer.lineWidth = 15
         circleLayer.strokeEnd = 1.0
+        circleLayer.strokeColor = Colors.gray.cgColor
         view.layer.addSublayer(circleLayer)
-    }
 
-    //Метод создания таймлайна - бегущий прогресс бар
-    private func createProgressLayerPath() {
-        progressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        progressLayer.lineWidth = 15
-        progressLayer.strokeEnd = 0.0
-        progressLayer.lineCap = .round
+        //Создание прогресс бара
+        progressLayer.path = circularPath.cgPath
         progressLayer.fillColor = UIColor.clear.cgColor
+        progressLayer.lineCap = .round
+        progressLayer.lineWidth = 15
+        progressLayer.strokeEnd = 0
         progressLayer.strokeColor = Colors.blue.cgColor
         view.layer.addSublayer(progressLayer)
     }
@@ -168,26 +168,29 @@ class ViewController: UIViewController {
     //Метод режима работы анимации
     private func startResumeAnimation() {
         if isAnimationStarted == false {
-            startAnimation()
+            if isWorkTime == true {
+                startAnimation(duration: workTime)
+                print("workTime")
+            } else {
+                startAnimation(duration: relaxTime)
+                print("relaxTime")
+            }
         } else {
             resumeAnimation(for: progressLayer)
+            print("resumeAnimation")
         }
     }
 
     //Метод для настройки старта анимации
-    private func startAnimation() {
+    func startAnimation(duration: TimeInterval) {
         resetAnimation()
         isAnimationStarted = true
-        progressLayer.strokeEnd = 0.0
-        animation.keyPath = "strokeEnd"
-        animation.fromValue = 0.0
-        animation.duration = CFTimeInterval(allTime)
-        animation.toValue = 1.0
-        animation.fillMode = .forwards
-        animation.isAdditive = true
-        animation.isRemovedOnCompletion = false
-        progressLayer.add(animation, forKey: "progressAnim")
-        print("startAnimation")
+        let circularProgressAnimation = CABasicAnimation(keyPath: "strokeEnd")
+        circularProgressAnimation.duration = duration
+        circularProgressAnimation.toValue = 1.0
+        circularProgressAnimation.fillMode = .forwards
+        circularProgressAnimation.isRemovedOnCompletion = false
+        progressLayer.add(circularProgressAnimation, forKey: "progressAnim")
     }
 
     //Метод настройки для перезагрузки анимации
@@ -216,7 +219,6 @@ class ViewController: UIViewController {
         circle.beginTime = 0.0
         let timeSincePaused = circle.convertTime(CACurrentMediaTime(), from: nil) - pauseTime
         circle.beginTime = timeSincePaused
-        print("resumeAnimation")
     }
 
     //Метод настройки для остановки анимации
@@ -230,6 +232,10 @@ class ViewController: UIViewController {
         print("stopAnimation")
     }
 
+    private func startTimer() {
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
+    }
+
     // MARK: - Actions
 
     //Метод режима кнопки работы старт и паузы
@@ -237,7 +243,7 @@ class ViewController: UIViewController {
         refreshButton.isEnabled = true
 
         if isStarted == false {
-            timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
+            startTimer()
             startResumeAnimation()
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
             playAndPauseButton.configuration?.baseBackgroundColor = Colors.red
@@ -248,6 +254,8 @@ class ViewController: UIViewController {
             pauseAnimation(for: progressLayer)
             playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
             playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
+            //            progressLayer.removeAnimation(forKey: "progressAnimation")
+
             isStarted = false
             print("pause")
         }
@@ -255,77 +263,73 @@ class ViewController: UIViewController {
 
     //Метод установки режима работы в зависимости от таймера
     @objc private func timerMode() {
-        allTime -= 1
-        countdownTimeLabel.text = "\(allTime)"
-        setupTime()
-
-        //Режим отдыха и работы
-        if allTime == 0 && isWorkTime == true {
-            updateWorkTime()
-        } else if allTime == 0 && isWorkTime == false {
-            updateBreakTime()
+        if isWorkTime {
+            //Режим работы
+            if workTime < 1 {
+                changeToRelax()
+            } else {
+                print("work go \(workTime)")
+                workTime -= 1
+                countdownTimeLabel.text = formatWorkTimer()
+            }
+        } else {
+            //Режим отдыха
+            if relaxTime < 1 {
+                changeToWork()
+            } else {
+                print("relax go \(relaxTime)")
+                relaxTime -= 1
+                countdownTimeLabel.text = formatRelaxTimer()
+            }
         }
     }
 
-    //Метод смены рабочего времени на отдых
-    private func updateWorkTime() {
+    private func changeToRelax() {
         stopAnimation()
-        allTime = Time.breakTime
-        animation.duration = CFTimeInterval(allTime)
+        workTime = 10
         titleLabel.text = "Relax"
         countdownTimeLabel.text = "00:05"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         progressLayer.strokeColor = Colors.green.cgColor
-        refreshButton.isEnabled = false
         isStarted = false
         isWorkTime = false
+        refreshButton.isEnabled = false
         timer.invalidate()
-        print("breakTime = true")
+        print("work stop")
     }
 
-    //Метод смены отдыха на рабочее время
-    private func updateBreakTime() {
+    private func changeToWork() {
         stopAnimation()
-        allTime = Time.workTime
-        animation.duration = CFTimeInterval(allTime)
+        relaxTime = 5
         titleLabel.text = "Work"
         countdownTimeLabel.text = "00:10"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
         progressLayer.strokeColor = Colors.blue.cgColor
-        refreshButton.isEnabled = false
         isStarted = false
         isWorkTime = true
+        refreshButton.isEnabled = false
         timer.invalidate()
-        print("workTime = true")
+        print("relax stop")
     }
 
-    //Метод режима кнопки рефреш
+
     @objc private func refreshButtonTapped() {
         stopAnimation()
         refreshButton.isEnabled = false
         isStarted = false
         isWorkTime = true
-        Time.workTime = 10
-        Time.breakTime = 5
-        allTime = Time.workTime
+        workTime = 10
+        relaxTime = 5
         timer.invalidate()
+        progressLayer.strokeColor = Colors.blue.cgColor
         countdownTimeLabel.text = "00:10"
         titleLabel.text = "Work"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-        progressLayer.strokeColor = Colors.blue.cgColor
-        print("Refresh")
     }
 }
 
 extension UIView {
     func addSubviews(_ subviews: [UIView]) {
         subviews.forEach { addSubview($0) }
-    }
-}
-
-extension ViewController {
-    enum Time {
-        static var workTime = 10
-        static var breakTime = 5
     }
 }
