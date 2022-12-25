@@ -267,6 +267,7 @@ class ViewController: UIViewController {
         titleLabel.text = "Work"
         countdownTimeLabel.text = "00:10"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
         progressLayer.strokeColor = Colors.blue.cgColor
     }
 
@@ -275,6 +276,7 @@ class ViewController: UIViewController {
         titleLabel.text = "Relax"
         countdownTimeLabel.text = "00:05"
         playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
         progressLayer.strokeColor = Colors.green.cgColor
     }
 
