@@ -92,7 +92,6 @@ class ViewController: UIViewController {
         setupHierarchy()
         setupLayout()
         drawBackLayer()
-        drawForeLayer()
     }
 
     // MARK: - Setup
@@ -132,6 +131,9 @@ class ViewController: UIViewController {
         }
     }
 
+    // MARK: - Timer
+
+    //Метод для перевода в минуты и секунды
     private func formatWorkTimer() -> String {
         let minutes = Int(workingTime) / 60 % 60
         let seconds = Int(workingTime) % 60
@@ -144,10 +146,12 @@ class ViewController: UIViewController {
         return String(format: "%02i:%02i", minutes, seconds)
     }
 
+    //Инициализация таймера
     private func startTimer() {
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
     }
 
+    //Метод установки режима работы в зависимости от таймера
     @objc private func updateTimer() {
         if isWorkTime {
             updateWork()
@@ -156,8 +160,9 @@ class ViewController: UIViewController {
         }
     }
 
+    //Режим работы
     private func updateWork() {
-        if workingTime == 0 {
+        if workingTime < 1 {
             stopAnimation()
             cancelButton.isEnabled = false
             isStarted = false
@@ -173,6 +178,7 @@ class ViewController: UIViewController {
         }
     }
 
+    //Режим отдыха
     private func updateRelax() {
         if relaxTime < 1 {
             stopAnimation()
@@ -190,6 +196,9 @@ class ViewController: UIViewController {
         }
     }
 
+    // MARK: - Circle Progress Bar
+
+    //Метод создания таймлайна - серая подложка
     private func drawBackLayer() {
         backProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
         backProgressLayer.strokeColor = Colors.gray.cgColor
@@ -198,6 +207,7 @@ class ViewController: UIViewController {
         view.layer.addSublayer(backProgressLayer)
     }
 
+    //Метод создания таймлайна - бегущий прогресс бар
     private func drawForeLayer() {
         foreProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
         foreProgressLayer.lineWidth = 15
@@ -209,10 +219,10 @@ class ViewController: UIViewController {
         } else {
             foreProgressLayer.strokeColor = Colors.green.cgColor
         }
-
         view.layer.addSublayer(foreProgressLayer)
     }
 
+    //Метод режима работы анимации
     private func startResumeAnimation() {
         if isAnimationStarted {
             resumeAnimation()
@@ -221,6 +231,7 @@ class ViewController: UIViewController {
         }
     }
 
+    //Метод для настройки старта анимации
     private func startAnimation() {
         resetAnimation()
         foreProgressLayer.strokeEnd = 0.0
@@ -241,6 +252,7 @@ class ViewController: UIViewController {
         isAnimationStarted = true
     }
 
+    //Метод настройки для перезагрузки анимации
     private func resetAnimation() {
         foreProgressLayer.speed = 1.0
         foreProgressLayer.timeOffset = 0.0
@@ -249,12 +261,14 @@ class ViewController: UIViewController {
         isAnimationStarted = false
     }
 
+    //Метод настройки для паузы анимации
     private func pauseAnimation() {
         let pausedTime = foreProgressLayer.convertTime(CACurrentMediaTime(), to: nil)
         foreProgressLayer.speed = 0.0
         foreProgressLayer.timeOffset = pausedTime
     }
 
+    //Метод настройки для продолжения анимации
     private func resumeAnimation() {
         let pausedTime = foreProgressLayer.timeOffset
         foreProgressLayer.speed = 1.0
@@ -265,6 +279,7 @@ class ViewController: UIViewController {
         foreProgressLayer.beginTime = timeSincePaused
     }
 
+    //Метод настройки для остановки анимации
     private func stopAnimation() {
         foreProgressLayer.speed = 1.0
         foreProgressLayer.timeOffset = 0.0
@@ -276,6 +291,7 @@ class ViewController: UIViewController {
 
     // MARK: - Actions
 
+    //Метод режима кнопки работы старт и паузы
     @objc private func startAndPauseButtonTapped() {
         cancelButton.isEnabled = true
 
@@ -296,6 +312,7 @@ class ViewController: UIViewController {
         }
     }
 
+    //Метод режима кнопки рефреш
     @objc private func cancelButtonTapped() {
         stopAnimation()
         cancelButton.isEnabled = false
