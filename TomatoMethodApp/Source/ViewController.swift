@@ -10,20 +10,21 @@ import SnapKit
 
 class ViewController: UIViewController {
 
+    // MARK: - Properties
+
     private var timer = Timer()
-    private var workingTime = 10
-    private var relaxTime = 5
+    private var workTime: TimeInterval = 10
+    private var relaxTime: TimeInterval = 5
+    private var accurateTimerCount = 1000
 
-    private var isWorkTime: Bool = true
-    private var isStarted: Bool = false
-    private var isAnimationStarted: Bool = false
-
-    private let foreProgressLayer = CAShapeLayer()
-    private let backProgressLayer = CAShapeLayer()
-    private let animation = CABasicAnimation(keyPath: "strokeEnd")
-
+    private var circleLayer = CAShapeLayer()
+    private var progressLayer = CAShapeLayer()
     private var startPoint = CGFloat(-Double.pi / 2)
     private var endPoint = CGFloat(3 * Double.pi / 2)
+
+    private var isWorkTime = true
+    private var isStarted = false
+    private var isAnimationStarted = false
 
     // MARK: - UI Elements
 
@@ -38,7 +39,7 @@ class ViewController: UIViewController {
 
     private lazy var countdownTimeLabel: UILabel = {
         let label = UILabel()
-        label.text = "00:00"
+        label.text = "00:10"
         label.textAlignment = .center
         label.font = UIFont.systemFont(ofSize: 60, weight: .bold)
         label.textColor = .white
@@ -59,7 +60,7 @@ class ViewController: UIViewController {
         return button
     }()
 
-    private lazy var cancelButton: UIButton = {
+    private lazy var refreshButton: UIButton = {
         var configuration = UIButton.Configuration.tinted()
         configuration.cornerStyle = .capsule
         configuration.baseBackgroundColor = Colors.gray
@@ -69,7 +70,7 @@ class ViewController: UIViewController {
         configuration.titleAlignment = .leading
 
         let button = UIButton(configuration: configuration)
-        button.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
+        button.addTarget(self, action: #selector(refreshButtonTapped), for: .touchUpInside)
         return button
     }()
 
@@ -79,7 +80,7 @@ class ViewController: UIViewController {
         stack.alignment = .center
         stack.distribution = .fillEqually
         stack.spacing = 40
-        stack.addArrangedSubview(cancelButton)
+        stack.addArrangedSubview(refreshButton)
         stack.addArrangedSubview(playAndPauseButton)
         return stack
     }()
@@ -91,8 +92,7 @@ class ViewController: UIViewController {
         view.backgroundColor = Colors.black
         setupHierarchy()
         setupLayout()
-        drawBackLayer()
-        drawForeLayer()
+        createCircularPath()
     }
 
     // MARK: - Setup
@@ -120,7 +120,7 @@ class ViewController: UIViewController {
             make.width.equalTo(80)
         }
 
-        cancelButton.snp.makeConstraints { make in
+        refreshButton.snp.makeConstraints { make in
             make.height.equalTo(80)
             make.width.equalTo(80)
         }
@@ -132,9 +132,107 @@ class ViewController: UIViewController {
         }
     }
 
+    // MARK: - Progress bar
+
+    private func createCircularPath() {
+        let circularPath = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 140, startAngle: startPoint, endAngle: endPoint, clockwise: true)
+
+        //Создание фона круга
+        circleLayer.path = circularPath.cgPath
+        circleLayer.fillColor = UIColor.clear.cgColor
+        circleLayer.lineCap = .round
+        circleLayer.lineWidth = 15
+        circleLayer.strokeEnd = 1
+        circleLayer.strokeColor = Colors.gray.cgColor
+        view.layer.addSublayer(circleLayer)
+
+        //Создание прогресс бара
+        progressLayer.path = circularPath.cgPath
+        progressLayer.fillColor = UIColor.clear.cgColor
+        progressLayer.lineCap = .round
+        progressLayer.lineWidth = 15
+        progressLayer.strokeEnd = 0
+        progressLayer.strokeColor = Colors.blue.cgColor
+        view.layer.addSublayer(progressLayer)
+    }
+
+    //Метод режима работы анимации
+    private func startResumeAnimation() {
+        if !isAnimationStarted{
+            changeTime()
+        } else {
+            resumeAnimation(for: progressLayer)
+            print("resumeAnimation")
+        }
+    }
+
+    //Метод меняет время, в зависимоти от рабочего времени
+    private func changeTime() {
+        if isWorkTime {
+            startAnimation(duration: workTime)
+            print("workTime")
+        } else {
+            startAnimation(duration: relaxTime)
+            print("relaxTime")
+        }
+    }
+
+    //Метод для настройки старта анимации
+    private func startAnimation(duration: TimeInterval) {
+        resetAnimation()
+        isAnimationStarted = true
+        let circularProgressAnimation = CABasicAnimation(keyPath: "strokeEnd")
+        circularProgressAnimation.duration = duration
+        circularProgressAnimation.toValue = 1.0
+        circularProgressAnimation.fillMode = .forwards
+        circularProgressAnimation.isRemovedOnCompletion = false
+        progressLayer.add(circularProgressAnimation, forKey: "progressAnim")
+    }
+
+    //Метод настройки для перезагрузки анимации
+    private func resetAnimation() {
+        progressLayer.speed = 1.0
+        progressLayer.timeOffset = 0.0
+        progressLayer.beginTime = 0.0
+        progressLayer.strokeEnd = 0.0
+        isAnimationStarted = false
+        print("resetAnimation")
+    }
+
+    //Метод настройки для паузы анимации
+    private func pauseAnimation(for circle: CAShapeLayer) {
+        let pauseTime = circle.convertTime(CACurrentMediaTime(), from: nil)
+        circle.speed = 0.0
+        circle.timeOffset = pauseTime
+        print("pauseAnimation")
+    }
+
+    //Метод настройки для продолжения анимации
+    private func resumeAnimation(for circle: CAShapeLayer) {
+        let pauseTime = circle.timeOffset
+        circle.speed = 1.0
+        circle.timeOffset = 0.0
+        circle.beginTime = 0.0
+        let timeSincePaused = circle.convertTime(CACurrentMediaTime(), from: nil) - pauseTime
+        circle.beginTime = timeSincePaused
+    }
+
+    //Метод настройки для остановки анимации
+    private func stopAnimation() {
+        progressLayer.speed = 1.0
+        progressLayer.timeOffset = 0.0
+        progressLayer.beginTime = 0.0
+        progressLayer.strokeEnd = 0.0
+        progressLayer.removeAllAnimations()
+        isAnimationStarted = false
+        print("stopAnimation")
+    }
+
+    // MARK: - Timer
+
     private func formatWorkTimer() -> String {
-        let minutes = Int(workingTime) / 60 % 60
-        let seconds = Int(workingTime) % 60
+        let minutes = Int(workTime) / 60 % 60
+        let seconds = Int(workTime) % 60
         return String(format: "%02i:%02i", minutes, seconds)
     }
 
@@ -145,168 +243,113 @@ class ViewController: UIViewController {
     }
 
     private func startTimer() {
-        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
     }
 
-    @objc private func updateTimer() {
+    //Метод установки режима таймера
+    @objc private func timerMode() {
+        if accurateTimerCount > 0 {
+            accurateTimerCount -= 1
+            return
+        }
+
+        accurateTimerCount = 1000
+
         if isWorkTime {
-            updateWork()
+            changeToRelax()
         } else {
-            updateRelax()
+            changeToWork()
         }
     }
 
-    private func updateWork() {
-        if workingTime == 0 {
+    //Интерфейс для работы
+    private func workTimeInterface() {
+        titleLabel.text = "Work"
+        countdownTimeLabel.text = "00:10"
+        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        progressLayer.strokeColor = Colors.blue.cgColor
+    }
+
+    //Интерфейс для отдыха
+    private func relaxTimeInterface() {
+        titleLabel.text = "Relax"
+        countdownTimeLabel.text = "00:05"
+        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        progressLayer.strokeColor = Colors.green.cgColor
+    }
+
+    //Режим рабочее время и сменя на отдых
+    private func changeToRelax() {
+        guard workTime > 1 else {
             stopAnimation()
-            cancelButton.isEnabled = false
+            workTime = 10
+            relaxTimeInterface()
             isStarted = false
             isWorkTime = false
-            workingTime = 10
+            refreshButton.isEnabled = false
             timer.invalidate()
-            titleLabel.text = "Relax"
-            countdownTimeLabel.text = "00:05"
-            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-        } else {
-            workingTime -= 1
-            countdownTimeLabel.text = formatWorkTimer()
+            print("work stop")
+            return
         }
+
+        print("work go \(workTime)")
+        workTime -= 1
+        countdownTimeLabel.text = formatWorkTimer()
     }
 
-    private func updateRelax() {
-        if relaxTime < 1 {
+    //Режим отдыха и сменя на рабочее время
+    private func changeToWork() {
+        guard relaxTime > 1 else {
             stopAnimation()
-            cancelButton.isEnabled = false
+            relaxTime = 5
+            workTimeInterface()
             isStarted = false
             isWorkTime = true
-            relaxTime = 5
+            refreshButton.isEnabled = false
             timer.invalidate()
-            titleLabel.text = "Work"
-            countdownTimeLabel.text = "00:10"
-            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-        } else {
-            relaxTime -= 1
-            countdownTimeLabel.text = formatRelaxTimer()
-        }
-    }
-
-    private func drawBackLayer() {
-        backProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        backProgressLayer.strokeColor = Colors.gray.cgColor
-        backProgressLayer.fillColor = UIColor.clear.cgColor
-        backProgressLayer.lineWidth = 15
-        view.layer.addSublayer(backProgressLayer)
-    }
-
-    private func drawForeLayer() {
-        foreProgressLayer.path = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 130, startAngle: startPoint, endAngle: endPoint, clockwise: true).cgPath
-        foreProgressLayer.lineWidth = 15
-        foreProgressLayer.lineCap = .round
-        foreProgressLayer.fillColor = UIColor.clear.cgColor
-
-        if isWorkTime {
-            foreProgressLayer.strokeColor = Colors.blue.cgColor
-        } else {
-            foreProgressLayer.strokeColor = Colors.green.cgColor
+            print("relax stop")
+            return
         }
 
-        view.layer.addSublayer(foreProgressLayer)
-    }
-
-    private func startResumeAnimation() {
-        if isAnimationStarted {
-            resumeAnimation()
-        } else {
-            startAnimation()
-        }
-    }
-
-    private func startAnimation() {
-        resetAnimation()
-        foreProgressLayer.strokeEnd = 0.0
-        animation.keyPath = "strokeEnd"
-        animation.fromValue = 0.0
-        animation.toValue = 1.0
-        animation.isRemovedOnCompletion = false
-        animation.isAdditive = true
-        animation.fillMode = .forwards
-
-        if isWorkTime {
-            animation.duration = CFTimeInterval(workingTime)
-        } else {
-            animation.duration = CFTimeInterval(relaxTime)
-        }
-
-        foreProgressLayer.add(animation, forKey: "strokeEnd")
-        isAnimationStarted = true
-    }
-
-    private func resetAnimation() {
-        foreProgressLayer.speed = 1.0
-        foreProgressLayer.timeOffset = 0.0
-        foreProgressLayer.beginTime = 0.0
-        foreProgressLayer.strokeEnd = 0.0
-        isAnimationStarted = false
-    }
-
-    private func pauseAnimation() {
-        let pausedTime = foreProgressLayer.convertTime(CACurrentMediaTime(), to: nil)
-        foreProgressLayer.speed = 0.0
-        foreProgressLayer.timeOffset = pausedTime
-    }
-
-    private func resumeAnimation() {
-        let pausedTime = foreProgressLayer.timeOffset
-        foreProgressLayer.speed = 1.0
-        foreProgressLayer.timeOffset = 0.0
-        foreProgressLayer.beginTime = 0.0
-
-        let timeSincePaused = foreProgressLayer.convertTime(CACurrentMediaTime(), to: nil) - pausedTime
-        foreProgressLayer.beginTime = timeSincePaused
-    }
-
-    private func stopAnimation() {
-        foreProgressLayer.speed = 1.0
-        foreProgressLayer.timeOffset = 0.0
-        foreProgressLayer.beginTime = 0.0
-        foreProgressLayer.strokeEnd = 0.0
-        foreProgressLayer.removeAllAnimations()
-        isAnimationStarted = false
+        print("relax go \(relaxTime)")
+        relaxTime -= 1
+        countdownTimeLabel.text = formatRelaxTimer()
     }
 
     // MARK: - Actions
 
+    //Метод режима кнопки работы старт и паузы
     @objc private func startAndPauseButtonTapped() {
-        cancelButton.isEnabled = true
+        refreshButton.isEnabled = true
 
-        if isStarted {
-            isStarted = false
-            timer.invalidate()
-            pauseAnimation()
-            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
-            playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
-        } else {
-            isStarted = true
-            timer.invalidate()
-            drawForeLayer()
+        if !isStarted {
+            startTimer()
             startResumeAnimation()
             playAndPauseButton.configuration?.image = UIImage(systemName: "pause.fill")
             playAndPauseButton.configuration?.baseBackgroundColor = Colors.red
-            startTimer()
+            isStarted = true
+            print("start")
+        } else {
+            timer.invalidate()
+            pauseAnimation(for: progressLayer)
+            playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+            playAndPauseButton.configuration?.baseBackgroundColor = Colors.green
+            progressLayer.removeAnimation(forKey: "progressAnimation")
+            isStarted = false
+            print("pause")
         }
     }
 
-    @objc private func cancelButtonTapped() {
+    @objc private func refreshButtonTapped() {
         stopAnimation()
-        cancelButton.isEnabled = false
+        refreshButton.isEnabled = false
         isStarted = false
         isWorkTime = true
-        workingTime = 10
+        workTime = 10
         relaxTime = 5
+        accurateTimerCount = 1000
         timer.invalidate()
-        countdownTimeLabel.text = "00:10"
-        titleLabel.text = "Work"
-        playAndPauseButton.configuration?.image = UIImage(systemName: "play.fill")
+        workTimeInterface()
     }
 }
 
