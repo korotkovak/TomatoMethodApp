@@ -25,6 +25,7 @@
 		C1131ED02955A91500E9376F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		C1131ED22955A91500E9376F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C1131EDE295721B100E9376F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		C1C464FD2B0F7F7C005282EC /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +59,7 @@
 		C1131EC32955A91300E9376F /* TomatoMethodApp */ = {
 			isa = PBXGroup;
 			children = (
+				C1C464FD2B0F7F7C005282EC /* Readme.md */,
 				C1131ED82955A9C400E9376F /* Resource */,
 				C1131ED92955A9CE00E9376F /* Source */,
 			);

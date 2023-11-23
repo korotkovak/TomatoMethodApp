@@ -135,7 +135,16 @@ class ViewController: UIViewController {
     // MARK: - Progress bar
 
     private func createCircularPath() {
-        let circularPath = UIBezierPath(arcCenter: CGPoint(x: view.frame.size.width / 2.0, y: view.frame.size.height / 2.0), radius: 140, startAngle: startPoint, endAngle: endPoint, clockwise: true)
+        let circularPath = UIBezierPath(
+            arcCenter: CGPoint(
+                x: view.frame.size.width / 2.0,
+                y: view.frame.size.height / 2.0
+            ),
+            radius: 140,
+            startAngle: startPoint, 
+            endAngle: endPoint,
+            clockwise: true
+        )
 
         //Создание фона круга
         circleLayer.path = circularPath.cgPath
@@ -243,13 +252,22 @@ class ViewController: UIViewController {
     }
 
     private func startTimer() {
-        timer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(timerMode), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(
+            timeInterval: 0.001,
+            target: self,
+            selector: #selector(timerMode),
+            userInfo: nil,
+            repeats: true
+        )
     }
 
     //Метод установки режима таймера
     @objc private func timerMode() {
         if accurateTimerCount > 0 {
             accurateTimerCount -= 1
+            if accurateTimerCount == 100 {
+                print(accurateTimerCount)
+            }
             return
         }
 
